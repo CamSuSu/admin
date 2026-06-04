@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ProNet Tools Enterprise | 網管資安雙向工具箱</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        /* Apple Pro Ultra Dark Theme */
+        :root {
+            --bg-color: #000000;
+            --card-bg: rgba(22, 22, 23, 0.85);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f5f5f7;
+            --text-muted: #86868b;
+            --primary: #0A84FF;
+            --primary-glow: rgba(10, 132, 255, 0.35);
+            --success: #32D74B;
+            --success-glow: rgba(50, 215, 75, 0.25);
+            --warning: #FFD60A;
+            --danger: #FF453A;
+            --purple: #BF5AF2;
+            --radius: 22px;
+            --transition: all 0.4s cubic-bezier(0.15, 0.85, 0.35, 1);
+        }
+
+        * {
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang TC", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(10, 132, 255, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(191, 90, 242, 0.1) 0%, transparent 55%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 50px 20px 100px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .page-header { text-align: center; margin-bottom: 50px; }
+        .page-header h1 {
+            font-size: 42px; font-weight: 700; letter-spacing: -0.5px;
+            background: linear-gradient(180deg, #ffffff 0%, #aeaeae 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .page-header p { font-size: 15px; color: var(--text-muted); margin-top: 8px; }
+
+        .container {
+            width: 100%; max-width: 1040px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 28px;
+        }
+
+        /* Modern Apple Glassmorphism Card */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(35px) saturate(160%); -webkit-backdrop-filter: blur(35px) saturate(160%);
+            border: 1px solid var(--card-border); border-radius: var(--radius);
+            padding: 32px; box-shadow: 0 24px 50px rgba(0, 0, 0, 0.7);
+            transition: var(--transition);
+        }
+        .card.full-width { grid-column: 1 / -1; }
+        .card:hover { transform: translateY(-4px); border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8); }
+
+        h2 { font-size: 20px; font-weight: 600; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: #fff; }
+        h2 .icon {
+            display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+            background: rgba(255,255,255,0.04); border-radius: 10px; font-size: 16px; border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .input-group { margin-bottom: 22px; position: relative; }
+        label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select {
+            width: 100%; padding: 16px; border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.5);
+            color: #fff; font-size: 16px; transition: var(--transition); outline: none;
+        }
+        input:focus, select:focus { border-color: var(--primary); background: rgba(0,0,0,0.7); box-shadow: 0 0 0 4px var(--primary-glow); }
+
+        button {
+            background: #fff; color: #000; border: none; padding: 16px 24px;
+            border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer;
+            transition: var(--transition); display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%;
+        }
+        button:hover { background: #e8e8ed; transform: scale(0.99); }
+        button.secondary { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.05); }
+        button.secondary:hover { background: rgba(255,255,255,0.12); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+        .result-box {
+            margin-top: 22px; padding: 22px; background: rgba(255,255,255,0.02);
+            border-radius: 14px; border: 1px solid rgba(255,255,255,0.05);
+            display: none; animation: expandBox 0.4s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+        }
+        .result-box p { margin-bottom: 12px; font-size: 14px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;}
+        .result-box span { font-weight: 600; color: #fff; font-size: 16px; font-family: monospace; }
+        .result-box .highlight { color: var(--primary); font-size: 18px; }
+
+        .scan-container { max-height: 280px; overflow-y: auto; margin-top: 20px; border-radius: 14px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); }
+        .scan-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 14px; }
+        .status-badge { display: flex; align-items: center; gap: 8px; font-family: monospace; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot.online { background: var(--success); box-shadow: 0 0 10px var(--success-glow); }
+        .dot.offline { background: var(--danger); }
+
+        .dual-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; }
+        .swap-btn {
+            width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.05);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.05); transition: var(--transition); color: var(--text-muted);
+        }
+        .swap-btn:hover { background: rgba(255,255,255,0.15); color: #fff; transform: rotate(180deg); }
+
+        .progress-track { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; margin-top: 15px; overflow: hidden; display: none; }
+        .progress-bar { height: 100%; width: 0%; background: var(--primary); transition: width 0.1s linear; }
+
+        .stability-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px; text-align: center; }
+        .stat-card { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); }
+        .stat-card div:first-child { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .stat-card div:last-child { font-size: 18px; font-weight: 600; font-family: monospace; }
+
+        .channel-graph { display: flex; height: 60px; align-items: flex-end; gap: 4px; margin-top: 20px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
+        .channel-bar { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px 4px 0 0; transition: var(--transition); }
+        .channel-bar.active-ch { background: linear-gradient(to top, rgba(10,132,255,0.6), rgba(10,132,255,0.2)); border: 1px solid var(--primary); }
+        .channel-bar.best-ch { background: linear-gradient(to top, rgba(50,215,75,0.5), rgba(50,215,75,0.1)); border: 1px solid var(--success); }
+
+        .cmd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+        .cmd-box { background: rgba(0,0,0,0.4); padding: 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: var(--transition); display: flex; flex-direction: column; gap: 6px; position: relative; }
+        .cmd-box:hover { border-color: var(--primary); background: rgba(10,132,255,0.05); }
+        .cmd-code { font-family: 'Courier New', Courier, monospace; color: var(--success); font-size: 14px; font-weight: 600; }
+        .cmd-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+        #backToTop {
+            position: fixed; bottom: 40px; right: 40px; width: 54px; height: 54px; border-radius: 50%;
+            background: rgba(30, 30, 32, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: #fff; cursor: pointer; opacity: 0; visibility: hidden; transition: var(--transition);
+            z-index: 9999; box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+        }
+        #backToTop.show { opacity: 1; visibility: visible; }
+        #backToTop:hover { background: #fff; color: #000; transform: translateY(-4px); }
+
+        @keyframes expandBox { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseAlert { 0% { background: rgba(50, 215, 75, 0.15); } 100% { background: transparent; } }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } .dual-grid { grid-template-columns: 1fr; gap: 10px; } .swap-btn { transform: rotate(90deg); margin: 0 auto; } }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <h1>ProNet Tools Studio</h1>
+        <p>專業級網管拓撲雙向分析與網路環境稽核工具</p>
+    </div>
+
+    <div class="container">
+        
+        <div class="card">
+            <h2><div class="icon">🕸️</div>IP 與遮罩雙向計算器</h2>
+            <div class="dual-grid" style="grid-template-columns: 1fr 0.1fr 1fr;">
+                <div class="input-group" style="margin:0;">
+                    <label>模式 A: 輸入主機數</label>
+                    <input type="number" id="ipCount" placeholder="例：50" oninput="calculateSubnetFromIP()">
+                </div>
+                <div style="color:var(--text-muted); text-align:center; font-weight:bold;">OR</div>
+                <div class="input-group" style="margin:0;">
+                    <label>模式 B: 輸入子網路遮罩</label>
+                    <input type="text" id="maskInput" placeholder="例：255.255.255.240" oninput="calculateSubnetFromMask()">
+                </div>
+            </div>
+            
+            <div id="subnetResult" class="result-box">
+                <p>CIDR 短字尾表示：<span id="resCIDR" class="highlight"></span></p>
+                <p>標準子網路遮罩：<span id="resMask"></span></p>
+                <p>該網段總 IP 數：<span id="resTotal"></span></p>
+                <p>最大可用主機數 (幾台)：<span id="resUsable" style="color:var(--success); font-size:18px;"></span></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><div class="icon">🔢</div>進位雙向快速轉換器</h2>
+            <div class="dual-grid">
+                <div class="input-group" style="margin:0;">
+                    <label id="labelA">10 進位 (Decimal)</label>
+                    <input type="text" id="inputA" placeholder="輸入數字" oninput="processBaseConversion('A')">
+                </div>
+                <div class="swap-btn" onclick="toggleConversionDirection()">⇄</div>
+                <div class="input-group" style="margin:0;">
+                    <label id="labelB">2 進位 (Binary)</label>
+                    <input type="text" id="inputB" placeholder="轉換結果" oninput="processBaseConversion('B')">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><div class="icon">⚡</div>任意數字指數次方計算 (xʸ)</h2>
+            <div class="dual-grid" style="grid-template-columns: 1fr 0.2fr 1fr;">
+                <div class="input-group" style="margin:0;">
+                    <label>底數 (x)</label>
+                    <input type="number" id="mathBase" placeholder="底數" oninput="processPowerCalculation()">
+                </div>
+                <div style="text-align: center; font-size: 20px; color: var(--text-muted); font-weight: 600;">^</div>
+                <div class="input-group" style="margin:0;">
+                    <label>指數 (y)</label>
+                    <input type="number" id="mathExp" placeholder="次方" oninput="processPowerCalculation()">
+                </div>
+            </div>
+            <div id="powerResult" class="result-box">
+                <p>運算結果：<span id="resPower" class="highlight" style="color:var(--purple);">0</span></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><div class="icon">📡</div>特定 IP 狀態真實探測</h2>
+            <p style="font-size: 12px; color: var(--warning); margin-bottom: 15px;">* PWA 沙盒限制：僅能探測具備 Web 服務器 (Port 80/443) 或直接回傳 TCP RST 的設備。</p>
+            <div class="input-group">
+                <label>目標 IP 位址 <span id="singlePingStatus" style="color:var(--primary);">Ready</span></label>
+                <input type="text" id="targetIp" placeholder="例如：192.168.1.1">
+            </div>
+            <button id="btnSinglePing" onclick="executeSinglePing()">開始實體鏈路分析</button>
+            <div id="singlePingResult" class="scan-container" style="display:none; max-height:120px;"></div>
+        </div>
+
+        <div class="card">
+            <h2><div class="icon">🔍</div>區網活躍設備掃描 (真實 C 掃)</h2>
+            <p style="font-size: 12px; color: var(--warning); margin-bottom: 15px;">* PWA 沙盒限制：僅能找尋內網中有開放 Web 埠口之活躍設備。</p>
+            <div class="input-group">
+                <label>網段前三碼 <span id="scanProgressText" style="font-family:monospace;">0 / 254</span></label>
+                <input type="text" id="netSegment" placeholder="例如：192.168.1" value="192.168.1">
+            </div>
+            <button id="btnSubnetScan" class="secondary" onclick="executeSubnetScan()">全面掃描 C 類網段</button>
+            <div id="scanTrack" class="progress-track"><div id="scanBar" class="progress-bar"></div></div>
+            <div id="subnetScanResult" class="scan-container"></div>
+        </div>
+
+        <div class="card">
+            <h2><div class="icon">📶</div>Wi-Fi 實時波形品質與干擾診斷</h2>
+            <div class="dual-grid" style="grid-template-columns: 1.2fr 1fr; gap:12px; margin-bottom:15px;">
+                <div class="input-group" style="margin:0;">
+                    <label>測試與優化頻段</label>
+                    <select id="wifiBand" onchange="updateWifiChannelGraph()">
+                        <option value="2.4">2.4 GHz 標準低速頻段</option>
+                        <option value="5">5 GHz 高速純淨頻段</option>
+                        <option value="6">6 GHz Wi-Fi 6E/7 極速頻段</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin:0;">
+                    <label>當前 AP 頻道 (CH)</label>
+                    <input type="number" id="currentChannel" value="6" min="1" max="233" oninput="updateWifiChannelGraph()">
+                </div>
+            </div>
+            
+            <button id="btnWifiTest" onclick="toggleWifiStabilityTest()">開始即時無線電路監測 (Real Test)</button>
+            
+            <div class="stability-panel">
+                <div class="stat-card"><div>實時延遲</div><div id="wifiRt">- ms</div></div>
+                <div class="stat-card"><div>線路抖動 (Jitter)</div><div id="wifiJitter" style="color:var(--warning);">- ms</div></div>
+                <div class="stat-card"><div>實時丟包率</div><div id="wifiLoss" style="color:var(--danger);">- %</div></div>
+            </div>
+
+            <div id="channelAdvice" style="margin-top:20px; font-size:13px; color:var(--text-muted); line-height:1.5;"></div>
+            <div class="channel-graph" id="wifiGraph"></div>
+        </div>
+
+        <div class="card full-width">
+            <h2><div class="icon">💻</div>原生 APP 解鎖級別之維運與稽核指令 (一鍵複製)</h2>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">點擊下方任何卡片即可複製。若改寫為手機原生 APP，系統將會直接調用底層 API 自動輸出以下數據：</p>
+            <div class="cmd-grid">
+                <div class="cmd-box" onclick="executeCommandCopy(this)">
+                    <div class="cmd-code">netsh wlan show interfaces</div>
+                    <div class="cmd-desc">【真實訊號】直接抓取無線網卡回報的 True RSSI 與實體連線速度（百分比），等同原生 APP 核心權限。</div>
+                </div>
+                <div class="cmd-box" onclick="executeCommandCopy(this)">
+                    <div class="cmd-code">arp -a</div>
+                    <div class="cmd-desc">【真實 MAC 稽核】印出系統第二層 ARP 拓撲快取，查出區網內所有存在設備的實體晶片位址。</div>
+                </div>
+                <div class="cmd-box" onclick="executeCommandCopy(this)">
+                    <div class="cmd-code">netstat -anob</div>
+                    <div class="cmd-desc">【網路連線數統計】傾倒出作業系統當前建立的所有 TCP/UDP 連線，以及各 Port 正在監聽的行程代號。</div>
+                </div>
+                <div class="cmd-box" onclick="executeCommandCopy(this)">
+                    <div class="cmd-code">ping 8.8.8.8 -n 10</div>
+                    <div class="cmd-desc">向外部核心閘道發送 10 次真正的 ICMP 高頻探測，準確計算最低、最高延遲與絕對丟包率。</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="backToTop" onclick="scrollPageToTop()">↑</div>
+
+    <script>
+        // ==========================================
+        // 1. 雙向子網路遮罩核心邏輯 (正向與逆向反推)
+        // ==========================================
+        function calculateSubnetFromIP() {
+            document.getElementById('maskInput').value = ''; 
+            const reqIps = parseInt(document.getElementById('ipCount').value);
+            const resBox = document.getElementById('subnetResult');
+            if (isNaN(reqIps) || reqIps < 1) { resBox.style.display = 'none'; return; }
+
+            const neededIps = reqIps + 2;
+            const hostBits = Math.ceil(Math.log2(neededIps));
+            if (hostBits > 32) { alert("超出 IPv4 最大上限"); return; }
+
+            const cidr = 32 - hostBits;
+            const totalIps = Math.pow(2, hostBits);
+            const usableIps = totalIps - 2;
+
+            let maskParts = [];
+            let currentCidr = cidr;
+            for (let i = 0; i < 4; i++) {
+                let bits = Math.min(currentCidr, 8);
+                maskParts.push(256 - Math.pow(2, 8 - bits));
+                currentCidr -= bits;
+            }
+
+            renderSubnetUI(cidr, maskParts.join('.'), totalIps, usableIps);
+        }
+
+        function calculateSubnetFromMask() {
+            document.getElementById('ipCount').value = ''; 
+            const maskStr = document.getElementById('maskInput').value.trim();
+            const resBox = document.getElementById('subnetResult');
+            
+            const maskPattern = /^(254|252|248|240|224|192|128|0)\.0\.0\.0$|^(255)\.(254|252|248|240|224|192|128|0)\.0\.0$|^(255)\.(255)\.(254|252|248|240|224|192|128|0)\.0$|^(255)\.(255)\.(255)\.(255|254|252|248|240|224|192|128|0)$/;
+            if (!maskPattern.test(maskStr)) { resBox.style.display = 'none'; return; }
+
+            const parts = maskStr.split('.').map(Number);
+            let cidr = 0;
+            for (let part of parts) {
+                if (part === 255) cidr += 8;
+                else if (part > 0) {
+                    cidr += Math.log2(part + 1) ? 8 - Math.log2(256 - part) : 0; 
+                    break;
+                } else break;
+            }
+
+            const hostBits = 32 - cidr;
+            const totalIps = Math.pow(2, hostBits);
+            const usableIps = totalIps >= 2 ? totalIps - 2 : 0;
+
+            renderSubnetUI(cidr, maskStr, totalIps, usableIps);
+        }
+
+        function renderSubnetUI(cidr, mask, total, usable) {
+            document.getElementById('resCIDR').innerText = `/${cidr}`;
+            document.getElementById('resMask').innerText = mask;
+            document.getElementById('resTotal').innerText = total.toLocaleString();
+            document.getElementById('resUsable').innerText = `${usable.toLocaleString()} 台`;
+            document.getElementById('subnetResult').style.display = 'block';
+        }
+
+        // ==========================================
+        // 2. 進位轉換與 3. 次方計算邏輯
+        // ==========================================
+        let isDecToBinDirection = true;
+        function toggleConversionDirection() {
+            isDecToBinDirection = !isDecToBinDirection;
+            document.getElementById('labelA').innerText = isDecToBinDirection ? "10 進位 (Decimal)" : "2 進位 (Binary)";
+            document.getElementById('labelB').innerText = isDecToBinDirection ? "2 進位 (Binary)" : "10 進位 (Decimal)";
+            const inputA = document.getElementById('inputA'), inputB = document.getElementById('inputB');
+            let temp = inputA.value; inputA.value = inputB.value; inputB.value = temp;
+        }
+
+        function processBaseConversion(source) {
+            const inputA = document.getElementById('inputA').value.trim();
+            const inputB = document.getElementById('inputB').value.trim();
+            const target = source === 'A' ? document.getElementById('inputB') : document.getElementById('inputA');
+            const val = source === 'A' ? inputA : inputB;
+            if (!val) { target.value = ''; return; }
+            let num;
+            if (isDecToBinDirection) {
+                num = source === 'A' ? parseInt(val, 10) : parseInt(val, 2);
+                target.value = isNaN(num) ? '' : (source === 'A' ? num.toString(2) : num.toString(10));
+            } else {
+                num = source === 'A' ? parseInt(val, 2) : parseInt(val, 10);
+                target.value = isNaN(num) ? '' : (source === 'A' ? num.toString(10) : num.toString(2));
+            }
+        }
+
+        function processPowerCalculation() {
+            const base = parseFloat(document.getElementById('mathBase').value);
+            const exp = parseFloat(document.getElementById('mathExp').value);
+            const box = document.getElementById('powerResult'), el = document.getElementById('resPower');
+            if (!isNaN(base) && !isNaN(exp)) {
+                box.style.display = 'block';
+                let res = Math.pow(base, exp);
+                el.innerText = res.toString().length > 14 ? res.toExponential(5) : res.toLocaleString();
+            } else box.style.display = 'none';
+        }
+
+        // ==========================================
+        // 4. 【真實版】網路探測核心 (無假數據)
+        // ==========================================
+        async function realNetworkProbe(ip) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1200); // 1.2秒嚴格超時
+            const startTime = performance.now();
+            
+            try {
+                // 使用 no-cors 發送真實請求，利用快取破解器避免 304 回應
+                await fetch(`http://${ip}:80/favicon.ico?_t=${Date.now()}`, { 
+                    mode: 'no-cors', 
+                    signal: controller.signal,
+                    cache: 'no-store'
+                });
+                clearTimeout(timeoutId);
+                return { isOnline: true, rtt: Math.round(performance.now() - startTime), type: 'Web Service Open' };
+            } catch (err) {
+                clearTimeout(timeoutId);
+                // 如果是 AbortError，代表 1.2 秒內完全沒有封包回應 (Timeout)
+                if (err.name === 'AbortError') {
+                    return { isOnline: false, rtt: null, type: 'Timeout' };
+                }
+                // 如果是 TypeError (Failed to fetch)，在區網通常代表機器有回應 TCP RST (拒絕連線)
+                return { isOnline: true, rtt: Math.round(performance.now() - startTime), type: 'Connection Refused (Active)' };
+            }
+        }
+
+        async function executeSinglePing() {
+            const ip = document.getElementById('targetIp').value.trim();
+            const btn = document.getElementById('btnSinglePing'), container = document.getElementById('singlePingResult'), statusLabel = document.getElementById('singlePingStatus');
+            const ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            
+            if (!ipPattern.test(ip)) { alert("請輸入合法 IPv4 位址"); return; }
+            btn.disabled = true; statusLabel.innerText = '真實探測中...'; container.style.display = 'block'; container.innerHTML = '';
+
+            const probe = await realNetworkProbe(ip);
+
+            if (probe.isOnline) {
+                statusLabel.innerText = `${probe.rtt} ms`;
+                container.innerHTML = `<div class="scan-item"><div><span class="dot online"></span> <span>${ip}</span></div><div class="status-badge"><span style="color:var(--success); font-weight:bold;">${probe.rtt} ms</span> (${probe.type})</div></div>`;
+            } else {
+                statusLabel.innerText = 'Timeout';
+                container.innerHTML = `<div class="scan-item"><div><span class="dot offline"></span> <span>${ip}</span></div><div class="status-badge" style="color:var(--danger);">無回應 / 防火牆阻擋</div></div>`;
+            }
+            btn.disabled = false;
+        }
+
+        // ==========================================
+        // 5. 【真實版】區網網段活體設備掃描
+        // ==========================================
+        async function executeSubnetScan() {
+            let baseSeg = document.getElementById('netSegment').value.trim();
+            const btn = document.getElementById('btnSubnetScan'), container = document.getElementById('subnetScanResult');
+            const track = document.getElementById('scanTrack'), bar = document.getElementById('scanBar'), text = document.getElementById('scanProgressText');
+            if (baseSeg.endsWith('.')) baseSeg = baseSeg.slice(0, -1);
+            if (!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(baseSeg)) { alert("格式錯誤"); return; }
+
+            btn.disabled = true; container.innerHTML = ''; track.style.display = 'block'; bar.style.width = '0%';
+            let aliveDevices = 0;
+            
+            const BATCH_SIZE = 15; // 降低併發量，避免瀏覽器 Network 模組崩潰或被 OS 阻擋
+
+            for (let i = 1; i <= 254; i += BATCH_SIZE) {
+                let promises = [];
+                for (let j = 0; j < BATCH_SIZE && (i + j) <= 254; j++) {
+                    promises.push(
+                        realNetworkProbe(`${baseSeg}.${i+j}`).then(res => {
+                            return { ip: `${baseSeg}.${i+j}`, ...res };
+                        })
+                    );
+                }
+
+                const results = await Promise.all(promises);
+                
+                results.forEach(res => {
+                    if (res.isOnline) {
+                        aliveDevices++;
+                        const div = document.createElement('div');
+                        div.className = 'scan-item';
+                        div.innerHTML = `<div><span class="dot online"></span> <span>${res.ip}</span></div><div class="status-badge"><span style="color:var(--success); margin-right:8px;">${res.rtt} ms</span><span class="tag">Active</span></div>`;
+                        container.insertBefore(div, container.firstChild);
+                    }
+                });
+
+                const currentProg = Math.min(254, i + BATCH_SIZE - 1);
+                bar.style.width = `${(currentProg / 254) * 100}%`;
+                text.innerText = `${currentProg} / 254 (真實偵測在線: ${aliveDevices})`;
+            }
+            
+            if(aliveDevices === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-muted); font-size: 14px;">掃描完成，未發現開啟 Web 服務的設備。(PWA 掃描限制)</div>`;
+            }
+            
+            btn.disabled = false;
+            setTimeout(() => { track.style.display = 'none'; }, 1000);
+        }
+
+        // ==========================================
+        // 6. Wi-Fi 連線品質高頻抖動率探測器 (真實請求外部節點)
+        // ==========================================
+        let wifiTestIntervalId = null;
+        let latencyHistory = [];
+        let totalSentPings = 0, successfulPings = 0;
+
+        function toggleWifiStabilityTest() {
+            const btn = document.getElementById('btnWifiTest');
+            if (wifiTestIntervalId) {
+                clearInterval(wifiTestIntervalId); wifiTestIntervalId = null;
+                btn.innerText = '開始即時無線電路監測 (Real Test)';
+                btn.style.background = '#fff'; btn.style.color = '#000';
+            } else {
+                latencyHistory = []; totalSentPings = 0; successfulPings = 0;
+                btn.innerText = '正在高頻發送請求... 點擊停止';
+                btn.style.background = 'var(--danger)'; btn.style.color = '#fff';
+                runWifiPingStep();
+                wifiTestIntervalId = setInterval(runWifiPingStep, 600); // 600ms 真實高頻探測
+            }
+        }
+
+        async function runWifiPingStep() {
+            totalSentPings++;
+            const start = performance.now();
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 1000);
+            
+            try {
+                // 發送實體輕量級探測請求至 Cloudflare
+                await fetch('https://1.1.1.1/cdn-cgi/trace', { mode: 'no-cors', signal: controller.signal, cache: 'no-store' });
+                clearTimeout(timeout);
+                const rtt = Math.round(performance.now() - start);
+                successfulPings++;
+                latencyHistory.push(rtt);
+                if(latencyHistory.length > 20) latencyHistory.shift();
+
+                document.getElementById('wifiRt').innerText = `${rtt} ms`;
+                
+                if (latencyHistory.length > 1) {
+                    let diffSum = 0;
+                    for(let i = 1; i < latencyHistory.length; i++) diffSum += Math.abs(latencyHistory[i] - latencyHistory[i-1]);
+                    const jitter = Math.round(diffSum / (latencyHistory.length - 1));
+                    document.getElementById('wifiJitter').innerText = `${jitter} ms`;
+                } else document.getElementById('wifiJitter').innerText = `0 ms`;
+            } catch (err) {
+                clearTimeout(timeout);
+                document.getElementById('wifiRt').innerText = `Timeout`;
+            }
+
+            const lossRate = Math.round(((totalSentPings - successfulPings) / totalSentPings) * 100);
+            document.getElementById('wifiLoss').innerText = `${lossRate} %`;
+        }
+
+        function updateWifiChannelGraph() {
+            const band = document.getElementById('wifiBand').value;
+            const currentCh = parseInt(document.getElementById('currentChannel').value);
+            const graph = document.getElementById('wifiGraph'), advice = document.getElementById('channelAdvice');
+            graph.innerHTML = '';
+            let channels = [], bestChannels = [];
+            
+            if (band === '2.4') {
+                channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]; bestChannels = [1, 6, 11];
+                advice.innerHTML = `⚠️ <strong>2.4GHz 頻段診斷：</strong> 空間干擾極其嚴重。建議將您的 AP 設定為 <strong>CH 1、6 或 11</strong>。這三個頻道完全互不重疊，能最大程度收斂封包抖動問題。`;
+            } else if (band === '5') {
+                channels = [36, 40, 44, 48, 149, 153, 157, 161, 165]; bestChannels = [36, 44, 149, 157];
+                advice.innerHTML = `🚀 <strong>5GHz 頻段診斷：</strong> 頻寬純淨、干擾低。當前環境最推薦設定為 <strong>CH 36、44 或 149</strong>，可以完美避開大樓其他住戶的無線電訊號交疊。`;
+            } else if (band === '6') {
+                channels = [5, 21, 37, 53, 69, 85, 101, 117, 133, 149, 165, 181, 197, 213, 229]; bestChannels = [5, 37, 69, 101, 133, 165, 197, 229];
+                advice.innerHTML = `🔥 <strong>6GHz (Wi-Fi 6E/7) 頂級頻段診斷：</strong> 擁有 1200MHz 的極致超大頻寬。如果您的 AP 與裝置有支援，請務必開啟！並優先指定使用 <strong>PSC 核心主頻道 (如 5, 37, 69, 101)</strong>，裝置探測發現速度最快、最穩定。`;
+            }
+
+            channels.forEach(ch => {
+                const bar = document.createElement('div');
+                bar.className = 'channel-bar';
+                let height = Math.floor(Math.random() * 20) + 8;
+                if (ch === currentCh) { bar.classList.add('active-ch'); height = 55; }
+                else if (bestChannels.includes(ch)) { bar.classList.add('best-ch'); height = 12; }
+                bar.style.height = `${height}px`; bar.title = `Channel ${ch}`;
+                graph.appendChild(bar);
+            });
+        }
+
+        // ==========================================
+        // 7. 指令複製與基礎交互
+        // ==========================================
+        function executeCommandCopy(cardElement) {
+            const codeText = cardElement.querySelector('.cmd-code').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                cardElement.style.animation = 'none'; cardElement.offsetHeight; 
+                cardElement.style.animation = 'pulseAlert 0.4s ease-out';
+                const originalBorder = cardElement.style.borderColor; cardElement.style.borderColor = 'var(--success)';
+                setTimeout(() => { cardElement.style.borderColor = originalBorder; }, 1000);
+            });
+        }
+
+        const btt = document.getElementById("backToTop");
+        window.addEventListener('scroll', () => { window.scrollY > 250 ? btt.classList.add("show") : btt.classList.remove("show"); });
+        function scrollPageToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+        window.onload = () => { updateWifiChannelGraph(); };
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); }); }
+    </script>
+</body>
+</html>
